@@ -39,7 +39,7 @@ local operator_symbols = {
   conditional_comment = P"/[",
   escape              = P"\\",
   filter              = P":",
-  header              = P"!!!",
+  header              = P"doctype",
   markup_comment      = P"/",
   script              = P"=",
   silent_comment      = P"-#" + "--",
@@ -135,7 +135,7 @@ local  css_name     = S"-_" + alnum^1
 local  class        = P"." * Ct(Cg(css_name^1, "class"))
 local  id           = P"#" * Ct(Cg(css_name^1, "id"))
 local  css          = P{(class + id) * V(1)^0}
-local  html_name    = R("az", "AZ", "09") + S":-_"
+local  html_name    = (alnum^1 * (alnum + S":-_")^0) - P("doctype")
 local  explicit_tag = Cg(html_name^1, "tag")
 local  implict_tag  = Cg(-S(1) * #css / function() return default_tag end, "tag")
 local  haml_tag     = (explicit_tag + implict_tag) * Cg(Ct(css) / flatten_ids_and_classes, "css")^0
@@ -146,10 +146,10 @@ local tag_modifiers = (modifiers.self_closing + (modifiers.inner_whitespace + mo
 
 -- Core Haml grammar
 local haml_element = Cg(Cp(), "pos") * leading_whitespace * (
-  -- Haml markup
-  (haml_tag * attributes^0 * tag_modifiers^0 * (inline_code + multiline_code + inline_content)^0) +
   -- Doctype or prolog
   (header) +
+  -- Haml markup
+  (haml_tag * attributes^0 * tag_modifiers^0 * (inline_code + multiline_code + inline_content)^0) +
   -- Silent comment
   (operators.silent_comment) * inline_whitespace^0 * Cg(unparsed^0, "comment") * nested_content +
   -- Script
