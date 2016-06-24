@@ -1,61 +1,60 @@
-# Lua Haml
+# Lua Siml
 
 ## About
 
-Lua Haml is an implementation of the [Haml](http://haml.info) markup
-language for Lua.
+Lua Siml is an implementation of the [Slim](http://slim-lang.info) markup
+language for Lua. I't based on [Lua Haml](http://haml.info), hence the name. There may be some artifacts of Haml left in the code that are not quite compatible with the Slim language.
 
-A Haml language reference can be found
-[here](http://haml.info/docs/yardoc/file.HAML_REFERENCE.html).
+Slim language documentation can be found
+[here](http://www.rubydoc.info/gems/slim/frames).
 
-Lua Haml implements almost 100% of Ruby Haml, and attempts to be as compatible
-as possible with it, with the following exceptions:
+Lua Siml implements a template language that looks like Ruby Slim, with the following exceptions:
 
+* Not all of the Haml-isms have been removed, and not all Slim-isms have been implemented.
 * Your script blocks are in Lua rather than Ruby, obviously.
-* A few Ruby-specific filters are not implemented, namely `:maruku`, `:ruby` and `:sass`.
 * No attribute methods. This feature would have to be added to Ruby-style
   attributes which are discouraged in Lua-Haml, or the creation of a
   Lua-specific attribute format, which I don't want to add.
 * No object reference. This feature is idiomatic to the Rails framework and
   doesn't really apply to Lua.
-* No ugly mode. Because of how Lua Haml is designed, there's no performance
-  penalty for outputting indented code, so there's no reason to implement this
-  option.
 
-Here's a [Haml
-template](http://github.com/norman/lua-haml/tree/master/sample.haml) that uses
-most of Lua Haml's features.
+Differences compared to Lua-Haml
+* Tags do not start with `%`
+* The header tag `!!!` is called `doctype`
+* Support for ruby style attributes have been removed.
+
+Here's a [Siml
+template](http://github.com/hengestone/lua-siml/tree/master/sample.slim) that uses
+most of Lua Siml's features.
 
 ## TODO
 
-Lua Haml is now feature complete, but is still considered beta quality. That
-said, I am using it for a production website, and will work quickly to fix any
-bugs that are reported.  So please feel free to use it for serious work - just
-not the Space Shuttle, ok?
+* Lua Siml works for simple documents, and is considered alpha quality.
+* Partial rendering support.
 
 
 ## Getting it
 
-The easiest way to install is via LuaRocks:
+In _future_ it would be available via LuaRocks:
 
-    luarocks install luahaml
+    luarocks install luasiml
 
 You can also always install the latest master branch from Git via Luarocks:
 
-    luarocks install luahaml --from=http://luarocks.org/repositories/rocks-cvs
+    luarocks install luasiml --from=http://luarocks.org/repositories/rocks-cvs
 
 ## Installing without Luarocks
 
-If you do not wish to use Luarocks, just put `haml.lua` and the `haml` directories
-somewhere on your package path, and place `luahaml` somewhere in your execution
+If you do not wish to use Luarocks, just put `siml.lua` and the `siml` directories
+somewhere on your package path, and place `luasiml` somewhere in your execution
 path.
 
 Here's one of many ways you could do this:
 
-    git clone git://github.com/norman/lua-haml.git
-    cd lua-haml
-    cp bin/luahaml ~/bin
-    cp -rp haml haml.lua /usr/local/my_lua_libs_dir
+    git clone git://github.com/norman/lua-siml.git
+    cd lua-siml
+    cp bin/luasiml ~/bin
+    cp -rp siml siml.lua /usr/local/my_lua_libs_dir
     export LUA_PATH=";;/usr/local/my_lua_libs_dir/?.lua"
 
 Note that you can also download a .zip or .tar.gz from Github if you do not use
@@ -66,24 +65,24 @@ Git.
 
 Here's a simple usage example:
 
-    -- in file.haml
+    -- in file.slim
     %p= "Hello, " .. name .. "!"
 
     -- in your application
-    local haml         = require "haml"
-    local haml_options = {format = "html5"}
-    local engine       = haml.new(options)
+    local siml         = require "siml"
+    local siml_options = {format = "html5"}
+    local engine       = siml.new(options)
     local locals       = {name = "Joe"}
-    local rendered     = engine:render_file("file.haml", locals)
+    local rendered     = engine:render_file("file.slim", locals)
 
     -- output
     <p>Hello, Joe!</p>
 
 ## Hacking it
 
-The [Github repository](http://github.com/norman/lua-haml) is located at:
+The [Github repository](http://github.com/hengestone/lua-siml) is located at:
 
-    git://github.com/norman/lua-haml.git
+    git://github.com/norman/lua-siml.git
 
 To run the specs, you should also install Telescope:
 
@@ -95,23 +94,23 @@ You can then run them using [Tlua](http://github.com/norman/tlua), or do
 
 ## Bug reports
 
-Please report them on the [Github issue tracker](http://github.com/norman/lua-haml/issues).
+Please report them on the [Github issue tracker](http://github.com/hengestone/lua-siml/issues).
 
 ## Author
 
+Based on the original work by
 [Norman Clarke](mailto://norman@njclarke.com)
 
 ## Thanks
 
-To Hampton Caitlin, Nathan Weizenbaum and Chris Eppstein for their work on the
-original Haml. Thanks also to Daniele Alessandri for being LuaHaml's earliest
-"real" user, and a source of constant encouragement.
+Norman Clarke for writing Lua-Haml!
 
 ## License
 
 The MIT License
 
 Copyright (c) 2009-2010 Norman Clarke
+Copyright (c) 2016 Conrad Steenberg
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
