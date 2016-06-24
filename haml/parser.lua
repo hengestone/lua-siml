@@ -44,7 +44,6 @@ local operator_symbols = {
   script              = P"=",
   silent_comment      = P"-#" + "--",
   silent_script       = P"-",
-  tag                 = P"%",
   escaped_script      = P"&=",
   unescaped_script    = P"!=",
   preserved_script    = P"~",
@@ -92,20 +91,8 @@ function parse_html_style_attributes(a)
   return match(list, a) or error(("Could not parse attributes '%s'"):format(a))
 end
 
-function parse_ruby_style_attributes(a)
-  local name   = (alnum + P"_")^1
-  local key    = (P":" * C(name)) + (P":"^0 * C(quoted_string)) / function(a) local a = a:gsub('[\'"]', ""); return a end
-  local value  = C(quoted_string + name)
-  local sep    = inline_whitespace^0 * P"," * (P" " + eol)^0
-  local assign = P'=>'
-  local pair   = Cg(key * inline_whitespace^0 * assign * inline_whitespace^0 * value) * sep^-1
-  local list   = S("{") * inline_whitespace^0 * Cf(Ct("") * pair^0, rawset) * inline_whitespace^0 * S("}")
-  return match(list, a) or error(("Could not parse attributes '%s'"):format(a))
-end
-
 local html_style_attributes = P{"(" * ((quoted_string + (P(1) - S"()")) + V(1))^0 * ")"} / parse_html_style_attributes
-local ruby_style_attributes = P{"{" * ((quoted_string + (P(1) - S"{}")) + V(1))^0 * "}"} / parse_ruby_style_attributes
-local any_attributes   = html_style_attributes + ruby_style_attributes
+local any_attributes   = html_style_attributes
 local attributes       = Cg(Ct((any_attributes * any_attributes^0)) / ext.flatten, "attributes")
 
 -- Haml HTML elements
@@ -149,7 +136,7 @@ local  class        = P"." * Ct(Cg(css_name^1, "class"))
 local  id           = P"#" * Ct(Cg(css_name^1, "id"))
 local  css          = P{(class + id) * V(1)^0}
 local  html_name    = R("az", "AZ", "09") + S":-_"
-local  explicit_tag = "%" * Cg(html_name^1, "tag")
+local  explicit_tag = Cg(html_name^1, "tag")
 local  implict_tag  = Cg(-S(1) * #css / function() return default_tag end, "tag")
 local  haml_tag     = (explicit_tag + implict_tag) * Cg(Ct(css) / flatten_ids_and_classes, "css")^0
 local inline_code = operators.script * inline_whitespace^0 * Cg(unparsed^0 * -multiline_modifier / function(a) return a:gsub("\\", "\\\\") end, "inline_code")
