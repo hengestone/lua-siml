@@ -1,19 +1,19 @@
 #!/usr/bin/env lua
 pcall(require, "luarocks.require")
 
-local haml = require "haml"
+local siml = require "siml"
 local ext  = require "haml.ext"
 
 local VERSION = "0.2.0"
 
-local banner = "LuaHaml %s, copyright Norman Clarke <norman@njclarke.com> 2009-2012"
+local banner = "LuaSiml %s, copyright Norman Clarke <norman@njclarke.com> 2009-2012, Conrad Steenberg <conrad.steenberg@gmail.com> 2016"
 
 local usage = [[
 
-Usage: luahaml [options] [filename]
+Usage: luasiml [options] [filename]
 
 Description:
-  Uses the Haml engine to process the specified input and prints
+  Uses the Siml engine to process the specified input and prints
   the result to standard output.
 
 Options:
@@ -22,19 +22,19 @@ Options:
   -i,     --inline         Like -s, but read input from command line
   -p,     --parse          Show the parser's output for debugging
   -c,     --precompile     Show the precompiler's output for debugging
-  -v,     --version        Show the LuaHaml version
+  -v,     --version        Show the LuaSiml version
   -?,-h,  --help           Show this message
 
 Examples:
 
   Render a template:
-  # luahaml my_template.haml > my_template.haml
+  # luasiml my_template.slim > my_template.html
 
   Read input from the command line and render
-  # luahaml -i '%p'
+  # luasiml -i '%p'
 
   Read input from the command line and show the parser info
-  # luahaml -p -i '%p'
+  # luasiml -p -i '%p'
 
 ]]
 
