@@ -1,13 +1,13 @@
-require "haml"
+require "siml"
 
 local function parse(input)
-  local engine = haml.new()
+  local engine = siml.new()
   return engine:parse(input)
 end
 
-describe("The LuaHaml parser", function()
+describe("The LuaSiml parser", function()
 
-  describe("When handling Haml tags", function()
+  describe("When handling Siml tags", function()
     it("should parse a bare css class as a div of that class ('.class1')", function()
       local output = parse(".class1")
       assert_equal(output[1].tag, "div")
@@ -36,78 +36,78 @@ describe("The LuaHaml parser", function()
       assert_equal(output[1].css.class, "'class1'")
     end)
 
-    it("should parse lines beginning with % as (X)HTML tags", function()
+    it("should parse lines beginning with (X)HTML tags", function()
       local valid_tags = {"h2", "a", "div", "a:a", "a-a", "1"}
       for _, tag in pairs(valid_tags) do
-        local output = parse("%" .. tag)
+        local output = parse("" .. tag)
         assert_equal(output[1].tag, tag)
       end
     end)
 
     it("should parse '<' following a tag as an inner whitespace modifier", function()
-      local output = parse("%p<")
+      local output = parse("p<")
       assert_not_equal(output[1].inner_whitespace_modifier, nil)
     end)
 
     it("should parse '>' following a tag as an outer whitespace modifier", function()
-      local output = parse("%p>")
+      local output = parse("p>")
       assert_not_equal(output[1].outer_whitespace_modifier, nil)
     end)
 
     it("should parse '/' following a tag as a self-closing modifier", function()
-      local output = parse("%img/")
+      local output = parse("img/")
       assert_not_equal(output[1].self_closing_modifier, nil)
     end)
 
     it("should parse '=' following a tag as a script operator", function()
-      local output = parse("%p=a")
+      local output = parse("p=a")
       assert_equal(output[1].operator, "script")
     end)
 
     it("should parse content after a script operator as inline code", function()
-      local output = parse("%p=a")
+      local output = parse("p=a")
       assert_equal(output[1].inline_code, "a")
     end)
   end)
 
-  describe("When handling Haml tags with portable-style attributes (a='b')", function()
+  describe("When handling Siml tags with portable-style attributes (a='b')", function()
 
     it("should return a table of key-value pairs", function()
-      local output = parse("%p(a='b')")
+      local output = parse("p(a='b')")
       assert_equal(output[1].attributes[1].a, "'b'")
     end)
 
     it("should parse attributes with newlines", function()
-      local output = parse("%p(a='b'\n   c='d')")
+      local output = parse("p(a='b'\n   c='d')")
       assert_equal(output[1].attributes[1].c, "'d'")
     end)
 
     it("should parse attributes with variables", function()
-      local output = parse("%p(a=b)")
+      local output = parse("p(a=b)")
       -- notice that the return value is not wrapped in quotes
       assert_equal(output[1].attributes[1].a, "b")
     end)
 
     it("should parse attributes keys with :, - and _", function()
-      local output = parse("%p(a-:_a='b')")
+      local output = parse("p(a-:_a='b')")
       assert_equal(output[1].attributes[1]["a-:_a"], "'b'")
     end)
 
     it("should parse attribute values with quoted parens", function()
-      local output = parse("%p(a='b)')")
+      local output = parse("p(a='b)')")
       assert_equal(output[1].attributes[1].a, "'b)'")
     end)
 
     it("should not parse attributes separated by spaces", function()
-      assert_error(function() parse("%p(a = 'b')") end)
+      assert_error(function() parse("p(a = 'b')") end)
     end)
 
     it("should not parse attributes separated by commas", function()
-      assert_error(function() parse("%p(a='b', c='d')") end)
+      assert_error(function() parse("p(a='b', c='d')") end)
     end)
 
     it("should not parse quoted attribute keys", function()
-      assert_error(function() parse("%p('a' = 'b')") end)
+      assert_error(function() parse("p('a' = 'b')") end)
     end)
   end)
 
@@ -226,7 +226,7 @@ describe("The LuaHaml parser", function()
     end)
 
     it("should return filtered content with 2-level indentation", function()
-      local output = parse("    :javascript\n      alert('hello world!');\n    %h2 Hello")
+      local output = parse("    :javascript\n      alert('hello world!');\n    h2 Hello")
       assert_not_nil(output[1].filter)
       assert_not_nil(output[1].content)
       assert_equal("javascript", output[1].filter)

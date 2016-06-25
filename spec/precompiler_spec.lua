@@ -1,8 +1,8 @@
-require "haml"
+require "siml"
 
-describe("The LuaHaml Precompiler:", function()
+describe("The LuaSiml Precompiler:", function()
 
-  local engine = haml.new()
+  local engine = siml.new()
 
 
   describe("conditional blocks", function()
@@ -27,7 +27,7 @@ describe("The LuaHaml Precompiler:", function()
 
     local es
     before(function()
-      es = haml.end_stack.new()
+      es = siml.end_stack.new()
     end)
 
     it("should have an initial indent level of 0", function()

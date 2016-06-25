@@ -13,8 +13,8 @@ local remove   = table.remove
 local tostring = tostring
 local upper    = string.upper
 
---- Haml parser
-module "haml.parser"
+--- Siml parser
+module "siml.parser"
 
 -- import lpeg feature functions into current module
 for k, v in pairs(lpeg) do
