@@ -1,3 +1,4 @@
+require "haml"
 require "siml"
 
 describe("The LuaSiml Precompiler:", function()
@@ -7,19 +8,19 @@ describe("The LuaSiml Precompiler:", function()
 
   describe("conditional blocks", function()
     it("should handle single if", function()
-      assert_equal("<p>a</p>", engine:render("- if true then\n  %p a"))
+      assert_equal("<p>a</p>", engine:render("- if true then\n  p a"))
     end)
 
     it("should handle if/else", function()
-      assert_equal("<p>a</p>", engine:render("- if true then\n  %p a\n- else\n  %p b"))
+      assert_equal("<p>a</p>", engine:render("- if true then\n  p a\n- else\n  p b"))
     end)
 
     it("should handle if/elseif", function()
-      assert_equal("<p>a</p>", engine:render("- if true then\n  %p a\n- elseif false then\n  %p b"))
+      assert_equal("<p>a</p>", engine:render("- if true then\n  p a\n- elseif false then\n  p b"))
     end)
 
     it("should handle if/elseif/else", function()
-      assert_equal("<p>a</p>", engine:render("- if true then\n  %p a\n- elseif false then\n  %p b\n- else\n  %p c"))
+      assert_equal("<p>a</p>", engine:render("- if true then\n  p a\n- elseif false then\n  p b\n- else\n  p c"))
     end)
   end)
 
@@ -27,7 +28,7 @@ describe("The LuaSiml Precompiler:", function()
 
     local es
     before(function()
-      es = siml.end_stack.new()
+      es = haml.end_stack.new()
     end)
 
     it("should have an initial indent level of 0", function()

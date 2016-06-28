@@ -1,4 +1,4 @@
-require "haml"
+require "siml"
 
 -- This includes only LuaSiml-specific tests. Most other renderer tests
 -- are provided by the siml-spec submodule.
@@ -23,7 +23,7 @@ describe("The LuaSiml Renderer", function()
   for _, t in ipairs(tests) do
     test(string.format("should render '%s' as '%s'", string.gsub(t[1], "\n", "\\n"),
         string.gsub(t[2], "\n", "\\n")), function()
-        local engine = haml.new()
+        local engine = siml.new()
         assert_equal(t[2], engine:render(t[1], locals))
     end)
   end
@@ -36,42 +36,42 @@ describe("The LuaSiml Renderer", function()
     }
     local code = "p(id=get_id)"
     local html = "<p id='hello'></p>"
-    local engine = haml.new()
+    local engine = siml.new()
     assert_equal(html, engine:render(code, locals))
   end)
 
   test("should suppress_eval with script operators", function()
     local code = "p\n  = 'hello'"
     local html = "<p>\n\n</p>"
-    local engine = haml.new({suppress_eval = true})
+    local engine = siml.new({suppress_eval = true})
     assert_equal(html, engine:render(code, locals))
   end)
 
   test("should suppress_eval with tag script operators", function()
     local code = "p= 'hello'"
     local html = "<p></p>"
-    local engine = haml.new({suppress_eval = true})
+    local engine = siml.new({suppress_eval = true})
     assert_equal(html, engine:render(code, locals))
   end)
 
   test("should not interpolate when suppress_eval is set", function()
     local code = "p #{var}"
     local html = "<p>#{var}</p>"
-    local engine = haml.new({suppress_eval = true})
+    local engine = siml.new({suppress_eval = true})
     assert_equal(html, engine:render(code, {var = "hello"}))
   end)
 
   test("should interpolate locals in attributes", function()
-    local code = "- local foo = \"bar\"\np{:class => \"foo-#{foo}\"}"
+    local code = "- local foo = \"bar\"\np{class=\"foo-#{foo}\"}"
     local html = "<p class='foo-bar'></p>"
-    local engine = haml.new()
+    local engine = siml.new()
     assert_equal(html, engine:render(code))
   end)
 
   test("should interpolate locals in script", function()
     local code = "- local foo = 'bar'\na= \"foo-#{foo}\""
     local html = "<a>foo-bar</a>"
-    local engine = haml.new()
+    local engine = siml.new()
     assert_equal(html, engine:render(code))
   end)
 
@@ -83,7 +83,7 @@ describe("The LuaSiml Renderer", function()
     }
     local code = "p(id=get_id)"
     local html = "<p></p>"
-    local engine = haml.new({suppress_eval = true})
+    local engine = siml.new({suppress_eval = true})
     assert_equal(html, engine:render(code, locals))
   end)
 end)

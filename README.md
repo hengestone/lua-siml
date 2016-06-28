@@ -3,7 +3,7 @@
 ## About
 
 Lua Siml is an implementation of the [Slim](http://slim-lang.info) markup
-language for Lua. I't based on [Lua Haml](http://haml.info), hence the name. There may be some artifacts of Haml left in the code that are not quite compatible with the Slim language.
+language for Lua. It's based on [Lua Haml](http://haml.info), hence the name. There may be some artifacts of Haml left in the code that are not quite compatible with the Slim language.
 
 Slim language documentation can be found
 [here](http://www.rubydoc.info/gems/slim/frames).
@@ -35,7 +35,7 @@ most of Lua Siml's features.
 
 ## Getting it
 
-In _future_ it would be available via LuaRocks:
+In _future_ it will be available via LuaRocks:
 
     luarocks install luasiml
 
@@ -51,15 +51,11 @@ path.
 
 Here's one of many ways you could do this:
 
-    git clone git://github.com/norman/lua-siml.git
+    git clone git://github.com/hengestone/lua-siml.git
     cd lua-siml
     cp bin/luasiml ~/bin
     cp -rp siml siml.lua /usr/local/my_lua_libs_dir
     export LUA_PATH=";;/usr/local/my_lua_libs_dir/?.lua"
-
-Note that you can also download a .zip or .tar.gz from Github if you do not use
-Git.
-
 
 ## Using it in your application
 
@@ -82,7 +78,7 @@ Here's a simple usage example:
 
 The [Github repository](http://github.com/hengestone/lua-siml) is located at:
 
-    git://github.com/norman/lua-siml.git
+    git://github.com/hengestone/lua-siml.git
 
 To run the specs, you should also install Telescope:
 

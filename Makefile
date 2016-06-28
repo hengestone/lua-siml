@@ -1,11 +1,11 @@
 .PHONY: spec test clean
-DIST_NAME = $(shell lua -e 'v=io.open("VERSION"):read();print("lua-haml-" .. v .. "-0")')
+DIST_NAME = $(shell lua -e 'v=io.open("VERSION"):read();print("lua-siml-" .. v .. "-0")')
 
 test:
-	@tsc spec/haml-spec/lua_haml_spec.lua spec/*_spec.lua
+	@tsc spec/*_spec.lua
 
 spec:
-	@tsc -f spec/haml-spec/lua_haml_spec.lua spec/*_spec.lua
+	@tsc -f spec/*_spec.lua
 
 package: clean
 	mkdir -p pkg
