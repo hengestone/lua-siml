@@ -1,6 +1,6 @@
 local parser       = require "siml.parser"
 local precompiler  = require "haml.precompiler"
-local renderer     = require "haml.renderer"
+local renderer     = require "siml.renderer"
 local ext          = require "haml.ext"
 
 local assert       = assert
