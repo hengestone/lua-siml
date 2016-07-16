@@ -2,11 +2,15 @@ local parser       = require "siml.parser"
 local precompiler  = require "haml.precompiler"
 local renderer     = require "siml.renderer"
 local ext          = require "haml.ext"
+local libgen       = require "posix.libgen"
 
 local assert       = assert
 local merge_tables = ext.merge_tables
 local open         = io.open
 local setmetatable = setmetatable
+local ipairs       = ipairs
+local type         = type
+
 --- An implementation of the Slim markup language for Lua.
 -- <p>
 -- For more information on Slim, please see <a href="http://slim-lang.info">The Slim website</a>
@@ -23,6 +27,9 @@ default_siml_options = {
   adapter           = "lua",
   attribute_wrapper = "'",
   auto_close        = true,
+  rootdir           = "",
+  dir               = "",
+  dirsep            = "/",
   escape_html       = false,
   encoding          = "utf-8",
   format            = "xhtml",
@@ -61,9 +68,21 @@ local methods = {}
 -- @param siml_string The Siml string
 -- @param options Options for the precompiler
 -- @param locals Local variable values to set for the rendered template
-function methods:render(siml_string, locals)
-  local parsed   = self:parse(siml_string)
-  local compiled = self:compile(parsed)
+function methods:render(siml_data, locals)
+  local siml_strings
+
+  if type(siml_data) == 'string' then
+    siml_strings = {siml_data}
+  else
+    siml_strings = siml_data
+  end
+
+  local compiled = {}
+  for i, siml_string in ipairs(siml_strings) do
+    local parsed   = self:parse(siml_string)
+    compiled[i] = self:compile(parsed)
+  end
+
   local rendered = renderer.new(compiled, self.options):render(locals)
   return rendered
 end
@@ -77,6 +96,7 @@ function methods:render_file(file, locals)
   local siml_string = fh:read '*a'
   fh:close()
   self.options.file = file
+  self.options.dir = libgen.dirname(file)
   return self:render(siml_string, locals)
 end
 

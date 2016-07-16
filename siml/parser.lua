@@ -1,5 +1,6 @@
 local ext      = require "haml.ext"
 local lpeg     = require "lpeg"
+local lpeg     = require "lpeg"
 
 local concat   = table.concat
 local error    = error
@@ -92,8 +93,7 @@ function parse_html_style_attributes(a)
 end
 
 local html_style_attributes = P{"(" * ((quoted_string + (P(1) - S"()")) + V(1))^0 * ")"} / parse_html_style_attributes
-local any_attributes   = html_style_attributes
-local attributes       = Cg(Ct((any_attributes * any_attributes^0)) / ext.flatten, "attributes")
+local attributes       = Cg(Ct((html_style_attributes * html_style_attributes^0)), "attributes")
 
 -- Haml HTML elements
 -- Character sequences for CSS and XML/HTML elements. Note that many invalid
@@ -167,6 +167,7 @@ local haml_element = Cg(Cp(), "pos") * leading_whitespace * (
   -- Last resort
   empty_line
 )
+
 local grammar = Ct(Ct(haml_element) * (eol^1 * Ct(haml_element))^0)
 
 function tokenize(input)
