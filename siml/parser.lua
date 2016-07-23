@@ -2,15 +2,13 @@ local ext      = require "haml.ext"
 local lpeg     = require "lpeg"
 local lpeg     = require "lpeg"
 
-local concat   = table.concat
+local table   = table
 local error    = error
-local insert   = table.insert
 local ipairs   = ipairs
 local match    = lpeg.match
 local next     = next
 local pairs    = pairs
 local rawset   = rawset
-local remove   = table.remove
 local tostring = tostring
 local upper    = string.upper
 
@@ -29,8 +27,10 @@ local leading_whitespace  = Cg(S" \t"^0, "space")
 local inline_whitespace   = S" \t"
 local eol                 = P"\n" + "\r\n" + "\r"
 local empty_line          = Cg(P"", "empty_line")
+local continuation_line   = P"|"
 local multiline_modifier  = Cg(P"|", "multiline_modifier")
 local unparsed            = Cg((1 - eol - multiline_modifier)^1, "unparsed")
+local content             = Cg((1 - eol - continuation_line)^1)
 local default_tag         = "div"
 local singlequoted_string = P("'" * ((1 - S "'\r\n\f\\") + (P'\\' * 1))^0 * "'")
 local doublequoted_string = P('"' * ((1 - S '"\r\n\f\\') + (P'\\' * 1))^0 * '"')
@@ -103,14 +103,14 @@ local function flatten_ids_and_classes(t)
   ids = {}
   for _, t in pairs(t) do
     if t.id then
-      insert(ids, t.id)
+      table.insert(ids, t.id)
     else
-      insert(classes, t.class)
+      table.insert(classes, t.class)
     end
   end
   local out = {}
-  if next(ids) then out.id = ("'%s'"):format(remove(ids)) end
-  if next(classes) then out.class = ("'%s'"):format(concat(classes, " ")) end
+  if next(ids) then out.id = ("'%s'"):format(table.remove(ids)) end
+  if next(classes) then out.class = ("'%s'"):format(table.concat(classes, " ")) end
   return out
 end
 
@@ -120,14 +120,14 @@ local nested_content = Cg((Cmt(Cb("space"), function(subject, index, spaces)
   local start = subject:sub(index)
   for _, line in ipairs(ext.psplit(start, "\n")) do
     if match(P" "^(num_spaces + 1), line) then
-      insert(buffer, line)
+      table.insert(buffer, line)
     elseif line == "" then
-      insert(buffer, line)
+      table.insert(buffer, line)
     else
       break
     end
   end
-  local match = concat(buffer, "\n")
+  local match = table.concat(buffer, "\n")
   return index + match:len(), match
 end)), "content")
 
@@ -141,7 +141,10 @@ local  implict_tag  = Cg(-S(1) * #css / function() return default_tag end, "tag"
 local  haml_tag     = (explicit_tag + implict_tag) * Cg(Ct(css) / flatten_ids_and_classes, "css")^0
 local inline_code = operators.script * inline_whitespace^0 * Cg(unparsed^0 * -multiline_modifier / function(a) return a:gsub("\\", "\\\\") end, "inline_code")
 local multiline_code = operators.script * inline_whitespace^0 * Cg(((1 - multiline_modifier)^1 * multiline_modifier)^0 / function(a) return a:gsub("%s*|%s*", " ") end, "inline_code")
-local inline_content = inline_whitespace^0 * Cg(unparsed, "inline_content")
+local multiline =  continuation_line * Cg(C(S" \t")^0 * content)
+local multiline_content = Cg((Ct(multiline) * (eol^1 * Ct(multiline))^0)/table.concat, "content")
+local inline_content = inline_whitespace^0 * Cg(content, "content")
+
 local tag_modifiers = (modifiers.self_closing + (modifiers.inner_whitespace + modifiers.outer_whitespace))
 
 -- Core Haml grammar
@@ -150,6 +153,7 @@ local haml_element = Cg(Cp(), "pos") * leading_whitespace * (
   (header) +
   -- Haml markup
   (haml_tag * attributes^0 * tag_modifiers^0 * (inline_code + multiline_code + inline_content)^0) +
+  (multiline_content) +
   -- Silent comment
   (operators.silent_comment) * inline_whitespace^0 * Cg(unparsed^0, "comment") * nested_content +
   -- Script
@@ -163,6 +167,14 @@ local haml_element = Cg(Cp(), "pos") * leading_whitespace * (
   -- Escaped
   (operators.escape * unparsed^0) +
   -- Unparsed content
+  unparsed +
+  -- Last resort
+  empty_line
+)
+
+ haml_element = Cg(Cp(), "pos") * leading_whitespace * (
+  (haml_tag * attributes^0 * tag_modifiers^0 * (inline_code + multiline_code + inline_content)^0) +
+  (multiline_content) +
   unparsed +
   -- Last resort
   empty_line

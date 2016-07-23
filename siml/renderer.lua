@@ -3,10 +3,8 @@ local pretty = require "pl.pretty"
 
 local _G           = _G
 local assert       = assert
-local concat       = table.concat
 local error        = error
 local getfenv      = getfenv
-local insert       = table.insert
 local loadstring   = loadstring
 local open         = io.open
 local pairs        = pairs
@@ -16,6 +14,7 @@ local setfenv      = setfenv
 local setmetatable = setmetatable
 local sorted_pairs = ext.sorted_pairs
 local tostring     = tostring
+local string     = string
 local type         = type
 local rawset       = rawset
 local ipairs       = ipairs
@@ -26,14 +25,29 @@ module "siml.renderer"
 local methods = {}
 
 local function join(t, sep)
-  local selected = {}
-  i = 1
-  for _,val in pairs(t) do
-    if val and val.length > 0 then
-      selected[i] = val
-      i = i + 1
+  local joined = {}
+  for i,val in ipairs(t) do
+    if #val > 0 then
+      if #joined > 0 then
+        table.insert(joined, sep)
+      end
+      table.insert(joined, val)
     end
   end
+
+  return table.concat(joined)
+end
+
+local function split(str, sep)
+  local fields = {}
+  local pattern = string.format("([^%s]+)", sep)
+
+  str:gsub(pattern,
+      function(c)
+        fields[#fields+1] = c
+      end
+    )
+  return fields
 end
 
 local function interpolate_value(str, locals)
@@ -108,15 +122,19 @@ function methods:f(file)
 end
 
 function methods:b(string)
-  insert(self.buffer, string)
+  table.insert(self.buffer, string)
 end
 
 function methods:make_partial_func()
   local renderer = self
   local siml = require "siml"
-  return function(file, locals)
-    local engine   = siml.new(self.options)
-    local rendered = engine:render_file(join({self.options.rootdir, table.options.dir, ("_%s.slim"):format(file)},'/'), locals or renderer.env.locals)
+  return function(pname, locals)
+    local engine   = siml.new(renderer.options)
+    local pname_table = split(pname, '/')
+    table.insert(pname_table, ("_%s.slim"):format(table.remove(pname_table)))
+
+    local pfile = join(pname_table, '/')
+    local rendered = engine:render_file(join({renderer.options.rootdir, renderer.options.dir, pfile}, '/'), locals or renderer.env.locals)
     -- if we're in a partial, by definition the last entry added to the buffer
     -- will be the current spaces
     return rendered:gsub("\n", "\n" .. self.buffer[#self.buffer])
