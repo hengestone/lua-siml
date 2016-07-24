@@ -1,6 +1,5 @@
 local ext      = require "haml.ext"
 local lpeg     = require "lpeg"
-local lpeg     = require "lpeg"
 
 local table   = table
 local error    = error
@@ -139,11 +138,11 @@ local  html_name    = (alnum^1 * (alnum + S":-_")^0) - P("doctype")
 local  explicit_tag = Cg(html_name^1, "tag")
 local  implict_tag  = Cg(-S(1) * #css / function() return default_tag end, "tag")
 local  haml_tag     = (explicit_tag + implict_tag) * Cg(Ct(css) / flatten_ids_and_classes, "css")^0
-local inline_code = operators.script * inline_whitespace^0 * Cg(unparsed^0 * -multiline_modifier / function(a) return a:gsub("\\", "\\\\") end, "inline_code")
+local inline_code = operators.script * inline_whitespace^0 * Cg(unparsed^0 / function(a) return a:gsub("\\", "\\\\") end, "code")
 local multiline_code = operators.script * inline_whitespace^0 * Cg(((1 - multiline_modifier)^1 * multiline_modifier)^0 / function(a) return a:gsub("%s*|%s*", " ") end, "inline_code")
 local multiline =  continuation_line * Cg(C(S" \t")^0 * content)
 local multiline_content = Cg((Ct(multiline) * (eol^1 * Ct(multiline))^0)/table.concat, "content")
-local inline_content = inline_whitespace^0 * Cg(content, "content")
+local inline_content = inline_whitespace^0 * Cg(content, "contents")
 
 local tag_modifiers = (modifiers.self_closing + (modifiers.inner_whitespace + modifiers.outer_whitespace))
 
@@ -152,12 +151,12 @@ local haml_element = Cg(Cp(), "pos") * leading_whitespace * (
   -- Doctype or prolog
   (header) +
   -- Haml markup
-  (haml_tag * attributes^0 * tag_modifiers^0 * (inline_code + multiline_code + inline_content)^0) +
+  (haml_tag * attributes^0 * tag_modifiers^0 * (inline_code + inline_content)^0) +
   (multiline_content) +
   -- Silent comment
   (operators.silent_comment) * inline_whitespace^0 * Cg(unparsed^0, "comment") * nested_content +
   -- Script
-  (script_operator) * inline_whitespace^1 * Cg(unparsed^0, "code") +
+  (script_operator) * inline_whitespace^0 * Cg(unparsed^0, "code") +
   -- IE conditional comments
   (operators.conditional_comment * Cg((P(1) - "]")^1, "condition")) * "]" +
   -- Markup comment
@@ -167,14 +166,6 @@ local haml_element = Cg(Cp(), "pos") * leading_whitespace * (
   -- Escaped
   (operators.escape * unparsed^0) +
   -- Unparsed content
-  unparsed +
-  -- Last resort
-  empty_line
-)
-
- haml_element = Cg(Cp(), "pos") * leading_whitespace * (
-  (haml_tag * attributes^0 * tag_modifiers^0 * (inline_code + multiline_code + inline_content)^0) +
-  (multiline_content) +
   unparsed +
   -- Last resort
   empty_line

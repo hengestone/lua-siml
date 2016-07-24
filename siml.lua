@@ -1,5 +1,5 @@
 local parser       = require "siml.parser"
-local precompiler  = require "haml.precompiler"
+local precompiler  = require "siml.precompiler"
 local renderer     = require "siml.renderer"
 local ext          = require "haml.ext"
 local libgen       = require "posix.libgen"
