@@ -140,9 +140,9 @@ local  implict_tag  = Cg(-S(1) * #css / function() return default_tag end, "tag"
 local  haml_tag     = (explicit_tag + implict_tag) * Cg(Ct(css) / flatten_ids_and_classes, "css")^0
 local inline_code = operators.script * inline_whitespace^0 * Cg(unparsed^0 / function(a) return a:gsub("\\", "\\\\") end, "code")
 local multiline_code = operators.script * inline_whitespace^0 * Cg(((1 - multiline_modifier)^1 * multiline_modifier)^0 / function(a) return a:gsub("%s*|%s*", " ") end, "inline_code")
-local multiline =  continuation_line * Cg(C(S" \t")^0 * content)
-local multiline_content = Cg((Ct(multiline) * (eol^1 * Ct(multiline))^0)/table.concat, "content")
-local inline_content = inline_whitespace^0 * Cg(content, "contents")
+local multiline =  continuation_line * Cg(C(inline_whitespace^0) * content)
+local multiline_content = Cg(Ct(multiline)/table.concat, "content")
+local inline_content = inline_whitespace^0 * Cg(content, "content")
 
 local tag_modifiers = (modifiers.self_closing + (modifiers.inner_whitespace + modifiers.outer_whitespace))
 

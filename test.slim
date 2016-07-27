@@ -1,4 +1,4 @@
-- local title = "Lua Slim: Currently Supported Language"
+- title = "Lua Slim: Currently Supported Language"
 doctype XML
 html(xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en")
   head
@@ -17,7 +17,7 @@ html(xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en")
       If you're viewing the output and wondering what's so interesting, then
       you should probably be looking at the Haml source instead.
     #content
-      - local greetings = {en = "hello world!", es = "¡hola mundo!", pt = "olá mundo!"}
+      - greetings = {en = "hello world!", es = "¡hola mundo!", pt = "olá mundo!"}
       ul#greetings.multilingual
         - for lang, greeting in pairs(greetings) do
           li.greeting(class=lang)= greeting

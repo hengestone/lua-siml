@@ -10,12 +10,18 @@ local function should_auto_close(state)
     state.curr_phrase.self_closing_modifier or
     state.options.auto_closing_tags[state.curr_phrase.tag] and
     state.options.auto_close and
-    not state.curr_phrase.inline_content
+    not state.curr_phrase.content
 end
 
 local function should_close_inline(state)
-  return not state.next_phrase or
-    state.next_phrase.space <= state.curr_phrase.space
+  return not state.curr_phrase.content and (not state.next_phrase or
+    state.next_phrase.space <= state.curr_phrase.space)
+end
+
+local function should_close_previous(state)
+  pp = state.prev_phrase
+  cp = state.curr_phrase
+  return pp and cp.space == pp.space and (cp.tag or cp.code or cp.inline_code)
 end
 
 -- Precompile an (X)HTML tag for the current precompiler state.
@@ -24,6 +30,10 @@ function tag_for(state)
   local c = state.curr_phrase
 
   -- close any open tags if need be
+  if state.endings.indents > 0 and should_close_previous(state) then
+    state.buffer:string(state.endings:pop())
+    state.buffer:newline(true)
+  end
   state:close_tags()
 
   -- Set whitespace removal is modifier set or if tag is configured to

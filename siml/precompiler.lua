@@ -5,7 +5,7 @@ local ext                  = require "haml.ext"
 local filter               = require "haml.filter"
 local header               = require "haml.header"
 local string_buffer        = require "haml.string_buffer"
-local tag                  = require "haml.tag"
+local tag                  = require "siml.tag"
 
 local ipairs               = ipairs
 local require              = require
@@ -52,9 +52,10 @@ local function handle_current_phrase(compiler)
     matched = true
   end
 
-
   if cp.content then
-    compiler:close_tags()
+    if not cp.tag then
+      compiler:close_tags()
+    end
     compiler.buffer:string(compiler:indents() .. cp.content, {long = true, interpolate = true})
     compiler.buffer:newline(true)
     matched = true
@@ -87,7 +88,7 @@ function methods:precompile(phrases)
     self:__validate_whitespace()
     self.buffer:code(("r:at(%d)"):format(phrase.pos))
     if not handle_current_phrase(self) then
-      ext.do_error(self.curr_phrase.pos, "unknown phrase")
+      ext.do_error(self.curr_phrase.pos, "unknown phrase ")
     end
   end
 
