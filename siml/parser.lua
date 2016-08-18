@@ -171,8 +171,22 @@ local haml_element = Cg(Cp(), "pos") * leading_whitespace * (
   empty_line
 )
 
+local simple_line = Cg(Cp(), "pos") * leading_whitespace * (
+  -- Script
+  (script_operator) * inline_whitespace^0 * Cg(unparsed^0, "code") +
+  -- Unparsed content
+  unparsed +
+  -- Last resort
+  empty_line
+)
+
 local grammar = Ct(Ct(haml_element) * (eol^1 * Ct(haml_element))^0)
+local simple_grammar = Ct(Ct(simple_line) * (eol^1 * Ct(simple_line))^0)
 
 function tokenize(input)
+  return match(grammar, input)
+end
+
+function simple_tokenize(input)
   return match(grammar, input)
 end

@@ -101,6 +101,13 @@ local function escape_newlines(a, b, c)
   return a .. b:gsub("\n", "&#x000A;") .. c
 end
 
+local function relative_filename(pname, options)
+  local pname_table = split(pname, options.dirsep)
+  table.insert(pname_table, ("%s." .. options.siml):format(table.remove(pname_table)))
+  local pfile = join(pname_table, options.dirsep)
+  return join({options.rootdir, options.dir, pfile}, options.dirsep)
+end
+
 function methods:preserve_html(string)
   local string  = string
   for tag, _ in pairs(self.options.preserve) do
@@ -130,14 +137,31 @@ function methods:make_partial_func()
   local siml = require "siml"
   return function(pname, locals)
     local engine   = siml.new(renderer.options)
-    local pname_table = split(pname, '/')
-    table.insert(pname_table, ("_%s.slim"):format(table.remove(pname_table)))
-
-    local pfile = join(pname_table, '/')
-    local rendered = engine:render_file(join({renderer.options.rootdir, renderer.options.dir, pfile}, '/'), locals or renderer.env.locals)
+    local rendered = engine:render_file(relative_filename(pname, renderer.options), locals or renderer.env.locals)
     -- if we're in a partial, by definition the last entry added to the buffer
     -- will be the current spaces
     return rendered:gsub("\n", "\n" .. self.buffer[#self.buffer])
+  end
+end
+
+function methods:make_include_func()
+  local renderer = self
+  local siml = require "siml"
+  return function(pname, locals)
+    render.options.siml = "simi"
+    local engine   = siml.new(renderer.options)
+    return engine:include_file(relative_filename(pname, renderer.options), locals or renderer.env.locals)
+  end
+end
+
+function methods:make_include_raw_func()
+  local renderer = self
+  local siml = require "siml"
+  return function(pname, locals)
+    local fh = assert(open(relative_filename(pname, renderer.options)))
+    local raw_string = fh:read '*a'
+    fh:close()
+    return raw_string
   end
 end
 
@@ -235,9 +259,16 @@ end
 
 function new(precompiled, options)
   local compiledfuncs = {}
+  local code
+  local err
 
   for i, pre in ipairs(precompiled) do
-    table.insert(compiledfuncs, assert(loadstring(pre)))
+    code, err = loadstring(pre)
+    if not err then
+      table.insert(compiledfuncs, code)
+    else
+      return {error="Parse error: " .. err, chunk=i}
+    end
   end
 
   local renderer = {
@@ -249,9 +280,11 @@ function new(precompiled, options)
 
   setmetatable(renderer, {__index = methods})
   renderer.env = {
-    r       = renderer,
-    yield   = renderer:make_yield_func(),
+    include = renderer:make_include_func(),
     partial = renderer:make_partial_func(),
+    r       = renderer,
+    verbatim= renderer:make_include_raw_func(),
+    yield   = renderer:make_yield_func()
   }
 
   for i, func in ipairs(renderer.funcs) do
