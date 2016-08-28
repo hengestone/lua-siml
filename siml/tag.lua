@@ -14,8 +14,8 @@ local function should_auto_close(state)
 end
 
 local function should_close_inline(state)
-  return not state.curr_phrase.content and (not state.next_phrase or
-    state.next_phrase.space <= state.curr_phrase.space)
+  return not state.curr_phrase.content and not state.curr_phrase.code and
+    (not state.next_phrase or state.next_phrase.space <= state.curr_phrase.space)
 end
 
 local function should_close_previous(state)
