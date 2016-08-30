@@ -2,8 +2,11 @@ local parser       = require "siml.parser"
 local precompiler  = require "siml.precompiler"
 local renderer     = require "siml.renderer"
 local ext          = require "haml.ext"
+local dirent       = require "posix.dirent"
 local libgen       = require "posix.libgen"
-local pretty       = require "pl.pretty"
+local glob         = require("posix.glob").glob
+local stat         = require("posix.sys.stat")
+local pretty       = require("pl.pretty")
 local print        = print
 
 local assert       = assert
@@ -11,7 +14,9 @@ local merge_tables = ext.merge_tables
 local open         = io.open
 local setmetatable = setmetatable
 local ipairs       = ipairs
+local pairs        = pairs
 local type         = type
+local table        = table
 
 --- An implementation of the Slim markup language for Lua.
 -- <p>
@@ -38,7 +43,9 @@ default_siml_options = {
   indent            = "  ",
   newline           = "\n",
   preserve          = {pre = true, textarea = true},
-  siml              = "siml",
+  siml              = ".siml",
+  simi              = ".simi",
+  skip              = "_",
   space             = "  ",
   suppress_eval     = false,
   -- provided for compatiblity; does nothing
@@ -66,6 +73,14 @@ default_siml_options = {
 }
 
 local methods = {}
+function makename(inputdir, outputdir, fullpath)
+  local rawpath = fullpath:sub(#inputdir +1, -1)
+  return outputdir .. rawpath:sub(1, -6)
+end
+
+function writefile(name, date)
+
+end
 
 function methods:render_worker(siml_data, locals, parse)
   local siml_strings
@@ -101,15 +116,15 @@ function methods:render(siml_data, locals)
   return self:render_worker(siml_data, locals, parser.tokenize)
 end
 
---- Render a SimI string.
--- @param siml_string The Siml string
+--- Render a Siml string.
+-- @param siml_data The Siml string
 -- @param locals Local variable values to set for the rendered template
 function methods:render_simple(simi_data, locals)
   return self:render_worker(simi_data, locals, parser.tokenize_simpl)
 end
 
 --- Render a Siml file.
--- @param file The Siml file
+-- @param file The Siml filename
 -- @param locals Local variable values to set for the rendered template
 function methods:render_file(file, locals)
   local fh = assert(open(file))
@@ -120,8 +135,74 @@ function methods:render_file(file, locals)
   return self:render(siml_string, locals)
 end
 
+--- Recursively render a tree
+-- @param inputdir The input directory name
+-- @param outputdir The output directory name
+-- @param locals Local variable values to set for the rendered template
+function methods:render_tree(inputdir, outputdir, locals)
+  local todo = {inputdir}
+  local i = 1
+  local files
+
+  while todo[i] do
+    local dir = todo[i]
+    i =  i + 1
+
+    -- Check that the input is a file or a directory and set up table of names
+    local info = stat.stat(dir)
+    if stat.S_ISDIR(info.st_mode) == 1 then
+      files = dirent.dir(dir)
+    elseif stat.S_ISREG(info.st_mode) == 1 then
+      files = {dir}
+    else
+      local error = 'Error: '.. dir .. 'must be a file or a directory'
+      return nil, error
+    end
+
+    -- Process files
+    for i, file in ipairs (files) do
+      local fullpath = dir .. self.options.dirsep .. file
+      local prefix = file:sub(1,1)
+      local postfix = file:sub(-5, -1)
+
+      info = stat.stat(fullpath)
+      local isfile = (info and stat.S_ISREG(info.st_mode) == 1)
+      local isdir = (info and stat.S_ISDIR(info.st_mode) == 1)
+
+      local result
+
+      if prefix ~= self.options.skip and prefix ~= "." and
+          (isdir or (postfix == self.options.siml or postfix == self.options.simi)) then
+
+        if isfile then
+          print("rendering " .. fullpath)
+          local fh = assert(open(fullpath))
+          local siml_data = fh:read('*a')
+          fh:close()
+
+          if postfix == self.options.siml then -- read file
+            result = self:render(siml_data, locals)
+          else
+            result = self:render_simple(siml_data, locals)
+          end
+
+          fh = assert(open(makename(inputdir, outputdir, fullpath), "w"))
+          fh:write(result)
+          fh:close()
+
+        elseif isdir then
+          print(" --> todo dir " .. fullpath)
+          table.insert(todo, fullpath)
+        end
+      else
+        print("skipping " .. fullpath)
+      end
+    end
+  end
+end
+
 --- Include a file.
--- @param simi_string The filename
+-- @param file string The filename
 -- @param locals Local variable values to set for the rendered template
 function methods:include_file(file, locals)
   local fh = assert(open(file))

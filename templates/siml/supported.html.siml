@@ -1,0 +1,10 @@
+- title = "Lua Siml: Currently Supported Language"
+doctype strict
+html
+  head
+    title
+      = title
+  body
+    | Body text
+    h1 Title
+    = partial '../_content'
