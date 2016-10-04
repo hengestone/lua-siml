@@ -4,9 +4,10 @@ local renderer     = require "siml.renderer"
 local ext          = require "haml.ext"
 local dirent       = require "posix.dirent"
 local libgen       = require "posix.libgen"
-local glob         = require("posix.glob").glob
-local stat         = require("posix.sys.stat")
-local pretty       = require("pl.pretty")
+local posix_glob   = require "posix.glob"
+local glob         = posix_glob.glob
+local stat         = require "posix.sys.stat"
+local pretty       = require "siml.pretty"
 local print        = print
 
 local assert       = assert

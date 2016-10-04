@@ -21,7 +21,8 @@ end
 local function should_close_previous(state)
   pp = state.prev_phrase
   cp = state.curr_phrase
-  return pp and cp.space == pp.space and (cp.tag or cp.code or cp.inline_code)
+  return pp and not pp.closed and cp.space == pp.space and
+        (cp.tag or cp.code or cp.inline_code)
 end
 
 -- Precompile an (X)HTML tag for the current precompiler state.
@@ -63,6 +64,7 @@ function tag_for(state)
     else
       state.buffer:string('>')
     end
+    c.closed = true
   else
     state.buffer:string('>')
 
