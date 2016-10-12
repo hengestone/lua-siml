@@ -1,3 +1,5 @@
+module "siml.pretty"
+
 -- Based on http://lua-users.org/lists/lua-l/2009-11/msg00533.html
 
 local szt = {}

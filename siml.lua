@@ -2,6 +2,7 @@ local parser       = require "siml.parser"
 local precompiler  = require "siml.precompiler"
 local renderer     = require "siml.renderer"
 local ext          = require "haml.ext"
+local posix        = require "posix"
 local dirent       = require "posix.dirent"
 local libgen       = require "posix.libgen"
 local posix_glob   = require "posix.glob"
@@ -18,6 +19,9 @@ local ipairs       = ipairs
 local pairs        = pairs
 local type         = type
 local table        = table
+local stringutil   = require "siml.stringutil"
+local join         = stringutil.join
+local split        = stringutil.split
 
 --- An implementation of the Slim markup language for Lua.
 -- <p>
@@ -81,6 +85,23 @@ end
 
 function writefile(name, date)
 
+end
+
+function makedir(fullpath, options)
+  local dir = ""
+  local info
+  for i, elem in ipairs(split(libgen.dirname(fullpath), options.dirsep)) do
+    dir = join({dir, elem, options.dirsep})
+    info, errmsg, n = stat.stat(dir)
+    if info and stat.S_ISREG(info.st_mode) == 1 then
+      break
+    elseif not info then
+      if posix.mkdir(dir) ~= 0 then
+        print ("Error creating directory " .. dir)
+        break
+      end
+    end
+  end
 end
 
 function methods:render_worker(siml_data, locals, parse)
@@ -179,6 +200,8 @@ function methods:render_tree(inputdir, outputdir, locals)
           print("rendering " .. fullpath)
           local fh = assert(open(fullpath))
           local siml_data = fh:read('*a')
+          self.options.file = fullpath
+          self.options.dir = dir
           fh:close()
 
           if postfix == self.options.siml then -- read file
@@ -186,8 +209,9 @@ function methods:render_tree(inputdir, outputdir, locals)
           else
             result = self:render_simple(siml_data, locals)
           end
-
-          fh = assert(open(makename(inputdir, outputdir, fullpath), "w"))
+          local outputfile = makename(inputdir, outputdir, fullpath)
+          makedir(outputfile, self.options)
+          fh = assert(open(outputfile, "w"))
           fh:write(result)
           fh:close()
 

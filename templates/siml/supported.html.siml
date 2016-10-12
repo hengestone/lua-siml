@@ -7,4 +7,4 @@ html
   body
     | Body text
     h1 Title
-    = partial '../_content'
+    = partial '../_content.html.siml'

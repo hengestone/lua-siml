@@ -1,6 +1,5 @@
 local ext = require "haml.ext"
-local pretty = require "pl.pretty"
-
+local stringutil   = require "siml.stringutil"
 local _G           = _G
 local assert       = assert
 local error        = error
@@ -14,58 +13,18 @@ local setfenv      = setfenv
 local setmetatable = setmetatable
 local sorted_pairs = ext.sorted_pairs
 local tostring     = tostring
-local string     = string
+local string       = string
 local type         = type
 local rawset       = rawset
 local ipairs       = ipairs
 local table        = table
+local join         = stringutil.join
+local split        = stringutil.split
+local interpolate_value = stringutil.interpolate_value
 
 module "siml.renderer"
 
 local methods = {}
-
-local function join(t, sep)
-  local joined = {}
-  for i,val in ipairs(t) do
-    if #val > 0 then
-      if #joined > 0 then
-        table.insert(joined, sep)
-      end
-      table.insert(joined, val)
-    end
-  end
-
-  return table.concat(joined)
-end
-
-local function split(str, sep)
-  local fields = {}
-  local pattern = string.format("([^%s]+)", sep)
-
-  str:gsub(pattern,
-      function(c)
-        fields[#fields+1] = c
-      end
-    )
-  return fields
-end
-
-local function interpolate_value(str, locals)
-  local locals = locals or {}
-
-  -- load stuff between braces
-  local code = str:sub(2, str:len()-1)
-
-  -- avoid doing an eval if we're simply returning a value that's in scope
-  if locals[code] then return locals[code] end
-  local func = loadstring("return " .. code)
-  local env = getfenv()
-  setmetatable(env, {__index = function(table, key)
-    return locals[key] or _G[key]
-  end})
-  setfenv(func, env)
-  return assert(func)()
-end
 
 --- Does Ruby-style string interpolation.
 -- e.g.: in "hello #{var}!"
@@ -102,18 +61,15 @@ local function escape_newlines(a, b, c)
 end
 
 local function relative_filename(pname, options)
-  local pname_table = split(pname, options.dirsep)
-  table.insert(pname_table, ("%s." .. options.siml):format(table.remove(pname_table)))
-  local pfile = join(pname_table, options.dirsep)
-  return join({options.rootdir, options.dir, pfile}, options.dirsep)
+  return join({options.rootdir, options.dir, pname}, options.dirsep)
 end
 
-function methods:preserve_html(string)
-  local string  = string
+function methods:preserve_html(html)
+  local htmls  = html
   for tag, _ in pairs(self.options.preserve) do
-    string = string:gsub(("(<%s>)(.*)(</%s>)"):format(tag, tag), escape_newlines)
+    htmls = htmls:gsub(("(<%s>)(.*)(</%s>)"):format(tag, tag), escape_newlines)
   end
-  return string
+  return htmls
 end
 
 function methods:attr(attr)

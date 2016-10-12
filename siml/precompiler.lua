@@ -107,7 +107,7 @@ end
 
 function methods:indent_diff()
   if not self.space_sequence then return 0 end
-  return self:indent_level() - self.prev_phrase.space:len()  / self.space_sequence:len()
+  return self:indent_level() - self.endings.indents
 end
 
 function methods:indents(n)
