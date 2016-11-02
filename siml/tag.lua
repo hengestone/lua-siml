@@ -31,10 +31,6 @@ function tag_for(state)
   local c = state.curr_phrase
 
   -- close any open tags if need be
-  if state.endings.indents > 0 and should_close_previous(state) then
-    state.buffer:string(state.endings:pop())
-    state.buffer:newline(true)
-  end
   state:close_tags()
 
   -- Set whitespace removal is modifier set or if tag is configured to
