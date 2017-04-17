@@ -85,10 +85,15 @@ function methods:precompile(phrases)
     self.prev_phrase = phrases[index - 1]
     self.curr_phrase = phrase
     self:__detect_whitespace_format()
-    self:__validate_whitespace()
+    pos, err = self:__validate_whitespace()
+
+    if err then
+      return pos, err
+    end
+
     self.buffer:code(("r:at(%d)"):format(phrase.pos))
     if not handle_current_phrase(self) then
-      ext.do_error(self.curr_phrase.pos, "unknown phrase ")
+      return self.curr_phrase.pos, "unknown phrase "
     end
   end
 
@@ -173,7 +178,8 @@ function methods:__validate_whitespace()
   if self.prev_phrase then prev_space = self.prev_phrase.space end
   if self.curr_phrase.space:len() <= prev_space:len() then return end
   if self.curr_phrase.space == (prev_space .. self.space_sequence) then return end
-  ext.do_error(self.curr_phrase.pos, "bad indentation")
+
+  return self.curr_phrase.pos, "bad indentation"
 end
 
 --- Create a new Siml precompiler

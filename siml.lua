@@ -9,7 +9,9 @@ local posix_glob   = require "posix.glob"
 local glob         = posix_glob.glob
 local stat         = require "posix.sys.stat"
 local pretty       = require "siml.pretty"
-local print        = print
+local string       = string
+local io           = io
+local math         = math
 
 local assert       = assert
 local merge_tables = ext.merge_tables
@@ -28,6 +30,7 @@ local split        = stringutil.split
 -- For more information on Slim, please see <a href="http://slim-lang.info">The Slim website</a>
 -- and the <a href="http://www.rubydoc.info/gems/slim/frames">Slim language reference</a>.
 -- </p>
+
 module "siml"
 
 --- Default Siml options.
@@ -36,6 +39,8 @@ module "siml"
 -- @field newline The string value to use for newlines. Defaults to "\n".
 -- @field space The string value to use for spaces. Defaults to " ".
 default_siml_options = {
+  err_before        = 1,
+  err_after        = 1,
   adapter           = "lua",
   attribute_wrapper = "'",
   auto_close        = true,
@@ -97,11 +102,48 @@ function makedir(fullpath, options)
       break
     elseif not info then
       if posix.mkdir(dir) ~= 0 then
-        print ("Error creating directory " .. dir)
+        io.stderr:write("Error creating directory " .. dir .. '\n')
         break
       end
     end
   end
+end
+
+function count_lines(str, pos)
+  local _, count  = string.sub(str, 0, pos):gsub('\n', '\n')
+  return count
+end
+
+function split_lines(str)
+  local t = {}                   -- table to store the indices
+  local i = 0
+  while true do
+    i = string.find(str, "\n", i+1)    -- find 'next' newline
+    if i == nil then break end
+    table.insert(t, i)
+  end
+  table.insert(t, -1)
+  return t
+end
+
+function show_error(str, pos, pre_num, post_num)
+  local endings = split_lines(str)
+  local err_line = count_lines(str, pos)
+  local start_line = math.max(err_line - pre_num, 0)
+  local end_line = math.min(err_line + post_num, #endings)
+  for i = start_line,end_line do
+    if i == err_line then
+      io.stderr:write("> ", i, " ")
+    else
+      io.stderr:write("  ", i, " ")
+    end
+    io.stderr:write(str.sub(str, endings[i]+1, endings[i+1]))
+  end
+end
+
+function methods:handle_error(str, err, pos)
+  io.stderr:write("Error " .. err .. " at " .. self.options.file .. '\n')
+  show_error(str, pos, self.options.err_before, self.options.err_after)
 end
 
 function methods:render_worker(siml_data, locals, parse)
@@ -115,20 +157,27 @@ function methods:render_worker(siml_data, locals, parse)
 
   local compiled = {}
   for i, siml_string in ipairs(siml_strings) do
-    local parsed   = parse(siml_string)
-    local cm = self:compile(parsed)
+    local parsed, err   = parse(siml_string)
+    if err then
+      self:handle_error(siml_string, err, parsed)
+      return parsed, err
+    end
+    local cm, err = self:compile(parsed)
+    if err then
+      self:handle_error(siml_string, err, cm)
+      return cm, err
+    end
     compiled[i] = cm
   end
 
   local r = renderer.new(compiled, self.options)
   if r.error then
-    print(r.error)
-    print(compiled[r.chunk])
+    stderr:write(r.error)
+    stderr:write(compiled[r.chunk])
     return nil
   end
   local rendered = r:render(locals)
   return rendered
-
 end
 
 --- Render a Siml string.
@@ -197,7 +246,8 @@ function methods:render_tree(inputdir, outputdir, locals)
           (isdir or (postfix == self.options.siml or postfix == self.options.simi)) then
 
         if isfile then
-          print("rendering " .. fullpath)
+          local outputfile = makename(inputdir, outputdir, fullpath)
+          io.stdout:write("Rendering " .. fullpath .. " --> " .. outputfile .. '\n')
           local fh = assert(open(fullpath))
           local siml_data = fh:read('*a')
           self.options.file = fullpath
@@ -205,22 +255,25 @@ function methods:render_tree(inputdir, outputdir, locals)
           fh:close()
 
           if postfix == self.options.siml then -- read file
-            result = self:render(siml_data, locals)
+            result, err = self:render(siml_data, locals)
           else
-            result = self:render_simple(siml_data, locals)
+            result, err = self:render_simple(siml_data, locals)
           end
-          local outputfile = makename(inputdir, outputdir, fullpath)
+          if err then
+            break
+          end
           makedir(outputfile, self.options)
           fh = assert(open(outputfile, "w"))
           fh:write(result)
           fh:close()
 
         elseif isdir then
-          print(" --> todo dir " .. fullpath)
+          io.stdout:write(" --> todo dir " .. fullpath .. '\n')
           table.insert(todo, fullpath)
         end
       else
-        print("skipping " .. fullpath)
+        self.fullpath = nil
+        io.stdout:write("Skipping " .. fullpath .. '\n')
       end
     end
   end
